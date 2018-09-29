@@ -16,7 +16,7 @@ int db_close(HDB hdb){
     return sqlite3_close(hdb);
 }
 
-int db_exec_no_result(HDB hdb, const char* sql){
+int db_exec(HDB hdb, const char* sql){
     char *errmsg;
     //logi("sql: %s", sql);
     if (sqlite3_exec(hdb, sql, NULL, NULL, &errmsg) != SQLITE_OK){
@@ -26,7 +26,7 @@ int db_exec_no_result(HDB hdb, const char* sql){
     return SQL_OK;
 }
 
-int db_exec_with_result(HDB hdb, const char* sql, dbRecords* records){
+int db_exec_with_result(HDB hdb, const char* sql, RecordList* records){
     int row, col;
     char **results;
     char *errmsg;
@@ -36,9 +36,9 @@ int db_exec_with_result(HDB hdb, const char* sql, dbRecords* records){
         return SQL_ERR;
     }
 
-    // convert char ** to dbRecords
+    // convert char ** to RecordList
+    DBRecord record;
     for (int r = 1; r <= row; ++r){ // note: row = head + data_row;
-        dbRecord record;
         for (int c = 0; c < col; ++c){
             record[results[c]] = results[r*col + c];
         }
@@ -62,7 +62,7 @@ int db_exec_cb(HDB hdb, const char* sql, db_callback cb, void* userdata){
 int dbtable_select_count(HDB hdb, const char* table){
     char sql[64];
     sprintf(sql ,"select count(*) from %s;", table);
-    dbRecords records;
+    RecordList records;
     if (db_exec_with_result(hdb, sql, &records) == SQL_OK)
         return atoi(records[0]["count(*)"].c_str());
 
@@ -70,7 +70,7 @@ int dbtable_select_count(HDB hdb, const char* table){
 }
 
 // select col_names from table where condition;
-int dbtable_select(HDB hdb, const char* table, const char* col_names, const char* where, dbRecords* records, const char* limit){
+int dbtable_select(HDB hdb, const char* table, const char* col_names, const char* where, RecordList* records, const char* limit){
     if (!table || !records)
         return SQL_ERR;
 
@@ -106,7 +106,7 @@ int dbtable_insert(HDB hdb, const char* table, const char* col_names, const char
     }else{
         sprintf(sql, "insert into %s values (%s);", table, col_values);
     }
-    return db_exec_no_result(hdb, sql);
+    return db_exec(hdb, sql);
 }
 
 // update table set changes where condition;
@@ -120,7 +120,7 @@ int dbtable_update(HDB hdb, const char* table, const char* changes, const char* 
     }else{
         sprintf(sql,  "update %s set %s;", table, changes);
     }
-    return db_exec_no_result(hdb, sql);
+    return db_exec(hdb, sql);
 }
 
 // delete from table where condition;
@@ -132,8 +132,8 @@ int dbtable_delete(HDB hdb, const char* table, const char* where){
     if (where && strlen(where) > 0){
         sprintf(sql, "delete from %s where %s;", table, where);
     }else{
-        sprintf(sql, "delete * from %s;", table);
+        sprintf(sql, "delete from %s;", table);
     }
-    return db_exec_no_result(hdb, sql);
+    return db_exec(hdb, sql);
 }
 ////////////////////////////////////////////////////////////////////////////////

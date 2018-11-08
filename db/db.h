@@ -1,13 +1,13 @@
-#ifndef DB_H_INCLUDED
-#define DB_H_INCLUDED
+#ifndef SQLITE_DB_H_
+#define SQLITE_DB_H_
 
-#include "sqlite3.h"
 #include <vector>
 #include <string>
 #include <map>
-using namespace std;
 
-#define SQL_OK SQLITE_OK
+#include "sqlite3.h"
+
+#define SQL_OK  SQLITE_OK
 #define SQL_ERR SQLITE_ERROR
 
 typedef sqlite3* HDB;
@@ -34,4 +34,5 @@ int dbtable_update(HDB hdb, const char* table, const char* changes, const char* 
 // delete from table where condition;
 int dbtable_delete(HDB hdb, const char* table, const char* where);
 
-#endif // DB_H_INCLUDED
+#endif  // SQLITE_DB_H_
+

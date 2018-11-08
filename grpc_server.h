@@ -1,5 +1,5 @@
-#ifndef GRPC_SERVER_H
-#define GRPC_SERVER_H
+#ifndef GRPC_SERVER_H_
+#define GRPC_SERVER_H_
 
 #include "grpc++/grpc++.h"
 using grpc::ServerBuilder;
@@ -9,7 +9,7 @@ using grpc::Service;
 #include "hw/hstring.h"
 
 class GrpcServer {
-public:
+ public:
     GrpcServer(int port) : _port(port) {
         string srvaddr = asprintf("%s:%d", "0.0.0.0", _port);
         build_.AddListeningPort(srvaddr, grpc::InsecureServerCredentials());
@@ -24,10 +24,11 @@ public:
         server->Wait();
     }
 
-public:
+ public:
     int _port;
-private:
+ private:
     ServerBuilder build_;
 };
 
-#endif // GRPC_SERVER_H
+#endif  // GRPC_SERVER_H_
+

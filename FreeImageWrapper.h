@@ -1,10 +1,10 @@
-#ifndef FREE_IMAGE_WRAPPER_H
-#define FREE_IMAGE_WRAPPER_H
+#ifndef FREE_IMAGE_WRAPPER_H_
+#define FREE_IMAGE_WRAPPER_H_
 
 #include "FreeImage.h"
 
-class FreeImageWrapper{
-public:
+class FreeImageWrapper {
+ public:
     FreeImageWrapper();
     ~FreeImageWrapper();
 
@@ -35,15 +35,16 @@ public:
         return GetPitch()*GetHeight();
     }
 
-protected:
+ protected:
     void unload();
 
-public:
+ public:
     FIBITMAP* _bmp;
     FIMEMORY* _mem;
 
-private:
+ private:
     static bool s_bInit;
 };
 
-#endif // FREE_IMAGE_WRAPPER_H
+#endif  // FREE_IMAGE_WRAPPER_H_
+

@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
 
 #define EXEC_FAIL_EXITCODE  110
 
@@ -47,7 +48,23 @@ int main(int argc, char** argv) {
     // nochdir, noclose
     daemon(1, 1);
 
-    while (1) {
+    int cnt = 10;
+    time_t start_tt = 0;
+    while (cnt > 0) {
+        sleep(1);
+
+        time_t cur_tt = time(NULL);
+        // service time < 10s, exit
+        if (cur_tt - start_tt < 10) {
+            puts("service time too short!\n");
+            pexit(-30);
+        }
+        // service time < 1h, --cnt
+        if (cur_tt - start_tt < 3600) {
+            --cnt;
+        }
+        start_tt = cur_tt;
+        
         pid_t pid = fork();
         if (pid < 0) {
             perrno_exit();

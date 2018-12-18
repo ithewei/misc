@@ -9,9 +9,14 @@ HttpClient based libcurl
 #include <vector>
 #include <map>
 
-#include <curl/curl.h>
+using std::string;
+using std::vector;
+using std::map;
 
-#include "hw/hstring.h"
+#include <atomic>
+using std::atomic_flag;
+
+#include <curl/curl.h>
 
 // F(id, str)
 #define FOREACH_CONTENT_TYPE(F) \
@@ -31,7 +36,7 @@ HttpClient based libcurl
 
 typedef std::map<std::string, std::string> KeyValue;
 
-struct FormData{
+struct FormData {
     enum FormDataType {
         CONTENT,
         FILENAME
@@ -44,6 +49,10 @@ struct FormData{
         this->type = type;
         this->data = data;
     }
+    FormData(string& str, FormDataType type = CONTENT) {
+        this->type = type;
+        this->data = str;
+    }
     FormData(int n) {
         this->type = CONTENT;
         this->data = std::to_string(n);
@@ -55,6 +64,10 @@ struct FormData{
     FormData(float f) {
         this->type = CONTENT;
         this->data = std::to_string(f);
+    }
+    FormData(double lf) {
+        this->type = CONTENT;
+        this->data = std::to_string(lf);
     }
 };
 
@@ -77,25 +90,25 @@ struct HttpRequest {
 typedef std::string HttpResponse;
 
 class HttpClient {
- public:
+public:
     HttpClient();
     ~HttpClient();
 
     int Send(const HttpRequest& req, HttpResponse* res);
 
-    void setDebug(bool b) { m_bDebug = b; }
-    void setTimeout(int second) { m_timeout = second; }
-    void addHeader(string header) { m_headers.push_back(header); }
-    void resetHeader() { m_headers.clear(); }
+    void SetDebug(bool b) {m_bDebug = b;}
+    void SetTimeout(int sec) {m_timeout = sec;}
+    void ClearHeader() {m_headers.clear();}
+    void AddHeader(string header) {m_headers.emplace_back(header);}
 
- protected:
+protected:
     int curl(const HttpRequest& req, HttpResponse* res);
 
- private:
-    static bool s_bInit;
+private:
+    static atomic_flag s_bInit;
     bool m_bDebug;
-    vector<string> m_headers;
     int m_timeout;
+    vector<string> m_headers;
 };
 
 #endif  // HTTP_CLIENT_H_

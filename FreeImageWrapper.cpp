@@ -47,7 +47,7 @@ bool FreeImageWrapper::LoadFromFile(const char* filepath) {
         return false;
     }
 
-    _bmp = FreeImage_Load(fmt, filepath);
+    _bmp = FreeImage_Load(fmt, filepath, JPEG_EXIFROTATE);
     return _bmp != NULL;
 }
 
@@ -64,7 +64,7 @@ bool FreeImageWrapper::LoadFromMemory(const void* data, size_t size) {
         return false;
     }
 
-    _bmp = FreeImage_LoadFromMemory(fmt, _mem);
+    _bmp = FreeImage_LoadFromMemory(fmt, _mem, JPEG_EXIFROTATE);
     return _bmp != NULL;
 }
 

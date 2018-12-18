@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     }
 
     // [0, argc-1]
-    int len = sizeof(argc)*sizeof(char*);
+    int len = argc*sizeof(char*);
     char** child_argv = (char**)malloc(len);
     memset(child_argv, 0, len);
 
@@ -44,6 +44,16 @@ int main(int argc, char** argv) {
         child_argv[j] = (char*)malloc(len);
         strncpy(child_argv[j], argv[i], len);
     }
+
+    printf("child_argv: ");
+    for (i = 0; i < argc; ++i) {
+        if (child_argv[i]) {
+            printf("%s ", child_argv[i]);
+        } else {
+            printf("null ");
+        }
+    }
+    printf("\n");
 
     // nochdir, noclose
     daemon(1, 1);
@@ -64,7 +74,7 @@ int main(int argc, char** argv) {
             --cnt;
         }
         start_tt = cur_tt;
-        
+
         pid_t pid = fork();
         if (pid < 0) {
             perrno_exit();
@@ -84,7 +94,8 @@ int main(int argc, char** argv) {
         if (pid == 0) {
             int ret = execvp(argv[1], child_argv);
             if (ret < 0) {
-                printf("exec %s failed!\n", argv[1]);
+                printf("exec %s failed: %d\n", argv[1], ret);
+                perrno();
                 pexit(EXEC_FAIL_EXITCODE);
             }
         }

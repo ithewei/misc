@@ -2,11 +2,10 @@
 
 #include "hw/hlog.h"
 
-bool HttpClient::s_bInit = false;
+atomic_flag HttpClient::s_bInit(false);
 
 HttpClient::HttpClient() {
-    if (!s_bInit) {
-        s_bInit = true;
+    if (!s_bInit.test_and_set()) {
         curl_global_init(CURL_GLOBAL_ALL);
     }
     m_timeout = 0;
@@ -14,7 +13,7 @@ HttpClient::HttpClient() {
 }
 
 HttpClient::~HttpClient() {
-    // curl_global_cleanup();
+
 }
 
 int HttpClient::Send(const HttpRequest& req, HttpResponse* res) {
@@ -36,6 +35,10 @@ static size_t s_write_cb(char *buf, size_t size, size_t cnt, void *userdata) {
 
 int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
     CURL* handle = curl_easy_init();
+
+    // SSL
+    curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0);
+    curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, 0);
 
     // method
     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, req.method.c_str());
@@ -63,7 +66,7 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
     headers = curl_slist_append(headers, strContentType.c_str());
     curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
     if (m_bDebug) {
-        hlogd("%s %s", req.method.c_str(), req.url.c_str());
+        hlogd("%s %s HTTP/1.1", req.method.c_str(), req.url.c_str());
         hlogd("%s", strContentType.c_str());
     }
 
@@ -140,7 +143,19 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
 
     int ret = curl_easy_perform(handle);
     if (ret != 0) {
-        hloge("%s", curl_easy_strerror((CURLcode)ret));
+        hloge("%d: %s", ret, curl_easy_strerror((CURLcode)ret));
+    }
+
+    if (m_bDebug) {
+        if (res->length() != 0) {
+            hlogd("Response:%s", res->c_str());
+        }
+        double total_time, name_time, conn_time, pre_time;
+        curl_easy_getinfo(handle, CURLINFO_TOTAL_TIME, &total_time);
+        curl_easy_getinfo(handle, CURLINFO_NAMELOOKUP_TIME, &name_time);
+        curl_easy_getinfo(handle, CURLINFO_CONNECT_TIME, &conn_time);
+        curl_easy_getinfo(handle, CURLINFO_PRETRANSFER_TIME, &pre_time);
+        hlogd("TIME_INFO: %lf,%lf,%lf,%lf", total_time, name_time, conn_time, pre_time);
     }
 
     if (headers) {
@@ -148,10 +163,6 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
     }
 
     curl_easy_cleanup(handle);
-
-    if (m_bDebug) {
-        hlogd("Response:%s", res->c_str());
-    }
 
     return ret;
 }

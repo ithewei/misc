@@ -1,8 +1,9 @@
 #include "HttpClient.h"
 
 #include "hw/hlog.h"
+#include "hw/hstring.h"
 
-atomic_flag HttpClient::s_bInit(false);
+atomic_flag HttpClient::s_bInit;
 
 HttpClient::HttpClient() {
     if (!s_bInit.test_and_set()) {
@@ -25,11 +26,30 @@ static size_t s_formget_cb(void *arg, const char *buf, size_t len) {
     return len;
 }
 
-static size_t s_write_cb(char *buf, size_t size, size_t cnt, void *userdata) {
+static size_t s_header_cb(char* buf, size_t size, size_t cnt, void* userdata) {
     if (buf == NULL || userdata == NULL)    return 0;
 
     HttpResponse* res = (HttpResponse*)userdata;
-    res->append(buf, size*cnt);
+
+    string str(buf);
+    string::size_type pos = str.find_first_of(':');
+    if (pos == string::npos) {
+        if (res->status.empty()) {
+            res->status = trim(str);
+        }
+    } else {
+        string key = trim(str.substr(0, pos));
+        string value = trim(str.substr(pos+1));
+        res->headers[key] = value;
+    }
+    return size*cnt;
+}
+
+static size_t s_body_cb(char *buf, size_t size, size_t cnt, void *userdata) {
+    if (buf == NULL || userdata == NULL)    return 0;
+
+    HttpResponse* res = (HttpResponse*)userdata;
+    res->body.append(buf, size*cnt);
     return size*cnt;
 }
 
@@ -49,8 +69,9 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
     // header
     struct curl_slist *headers = NULL;
     if (m_headers.size() != 0) {
-        for (int i = 0; i < m_headers.size(); ++i) {
-            headers = curl_slist_append(headers, m_headers[i].c_str());
+        for (auto& pair : m_headers) {
+            string header = asprintf("%s: %s", pair.first.c_str(), pair.second.c_str());
+            headers = curl_slist_append(headers, header.c_str());
         }
     }
     const char* psz = "text/plain";
@@ -66,17 +87,17 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
     headers = curl_slist_append(headers, strContentType.c_str());
     curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
     if (m_bDebug) {
-        hlogd("%s %s HTTP/1.1", req.method.c_str(), req.url.c_str());
+        hlogd("%s %s", req.method.c_str(), req.url.c_str());
         hlogd("%s", strContentType.c_str());
     }
 
     // body or params
+    struct curl_httppost* httppost = NULL;
+    struct curl_httppost* lastpost = NULL;
     switch (req.content_type) {
     case HttpRequest::NONE:
         break;
     case HttpRequest::FORM_DATA: {
-        struct curl_httppost* httppost = NULL;
-        struct curl_httppost* lastpost = NULL;
         auto iter = req.form.begin();
         while (iter != req.form.end()) {
             CURLformoption opt = CURLFORM_COPYCONTENTS;
@@ -138,8 +159,12 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
         curl_easy_setopt(handle, CURLOPT_TIMEOUT, m_timeout);
     }
 
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, s_write_cb);
+    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, s_body_cb);
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, res);
+
+    curl_easy_setopt(handle, CURLOPT_HEADER, 0);
+    curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, s_header_cb);
+    curl_easy_setopt(handle, CURLOPT_HEADERDATA, res);
 
     int ret = curl_easy_perform(handle);
     if (ret != 0) {
@@ -147,8 +172,8 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
     }
 
     if (m_bDebug) {
-        if (res->length() != 0) {
-            hlogd("Response:%s", res->c_str());
+        if (res->body.length() != 0) {
+            hlogd("Response:%s", res->body.c_str());
         }
         double total_time, name_time, conn_time, pre_time;
         curl_easy_getinfo(handle, CURLINFO_TOTAL_TIME, &total_time);
@@ -160,6 +185,9 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
 
     if (headers) {
         curl_slist_free_all(headers);
+    }
+    if (httppost) {
+        curl_formfree(httppost);
     }
 
     curl_easy_cleanup(handle);

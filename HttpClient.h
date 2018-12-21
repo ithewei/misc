@@ -87,7 +87,12 @@ struct HttpRequest {
     KeyValue        kvs;
     Form            form;
 };
-typedef std::string HttpResponse;
+
+struct HttpResponse {
+    string status;
+    KeyValue headers;
+    string body;
+};
 
 class HttpClient {
 public:
@@ -98,8 +103,18 @@ public:
 
     void SetDebug(bool b) {m_bDebug = b;}
     void SetTimeout(int sec) {m_timeout = sec;}
-    void ClearHeader() {m_headers.clear();}
-    void AddHeader(string header) {m_headers.emplace_back(header);}
+    void AddHeader(string key, string value) {
+        m_headers[key] = value;
+    }
+    void DelHeader(string key) {
+        auto iter = m_headers.find(key);
+        if (iter != m_headers.end()) {
+            m_headers.erase(iter);
+        }
+    }
+    void ClearHeader() {
+        m_headers.clear();
+    }
 
 protected:
     int curl(const HttpRequest& req, HttpResponse* res);
@@ -108,7 +123,7 @@ private:
     static atomic_flag s_bInit;
     bool m_bDebug;
     int m_timeout;
-    vector<string> m_headers;
+    KeyValue m_headers;
 };
 
 #endif  // HTTP_CLIENT_H_

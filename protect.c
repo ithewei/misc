@@ -10,20 +10,18 @@
 #define EXEC_FAIL_EXITCODE  110
 
 void pexit(int code) {
-    printf("Exit with code %d.\n", code);
+    printf("exit with code %d\n", code);
     exit(code);
 }
 
-void perrno() {
+int perrno() {
     int code = errno;
     printf("%s: %d\n", strerror(code), code);
+    return code;
 }
 
 void perrno_exit() {
-    int code = errno;
-    printf("%s\n", strerror(code));
-    printf("Exit with code %d.\n", code);
-    exit(code);
+    pexit(perrno());
 }
 
 int main(int argc, char** argv) {
@@ -66,11 +64,12 @@ int main(int argc, char** argv) {
         time_t cur_tt = time(NULL);
         // service time < 10s, exit
         if (cur_tt - start_tt < 10) {
-            puts("service time too short!\n");
+            printf("protected: service time too short!\n");
             pexit(-30);
         }
         // service time < 1h, --cnt
         if (cur_tt - start_tt < 3600) {
+            printf("protected: service end within an hour!\n");
             --cnt;
         }
         start_tt = cur_tt;
@@ -94,7 +93,7 @@ int main(int argc, char** argv) {
         if (pid == 0) {
             int ret = execvp(argv[1], child_argv);
             if (ret < 0) {
-                printf("exec %s failed: %d\n", argv[1], ret);
+                printf("protected: exec %s failed: %d\n", argv[1], ret);
                 perrno();
                 pexit(EXEC_FAIL_EXITCODE);
             }

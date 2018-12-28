@@ -26,8 +26,12 @@ static int daemon = 0;
 
 char*   confile = NULL;
 
+void print_usage() {
+    printf("Usage: %s [%s]\n", g_program_name, options);
+}
+
 void print_help() {
-    printf("Usage: %s [%s]", g_program_name, options);
+    print_usage();
     puts(help);
 }
 
@@ -81,7 +85,6 @@ char* filename(char* filepath) {
 
 int get_options(int argc, char** argv) {
     char* p = NULL;
-    g_program_name = filename(argv[0]);
     for (int i = 1; i < argc; ++i) {
         p = (char*)argv[i];
         if (*p != '-') {
@@ -132,6 +135,13 @@ endwhile:
 }
 
 int main(int argc, char** argv) {
+    g_program_name = filename(argv[0]);
+
+    if (argc < 2) {
+        print_usage();
+        exit(0);
+    }
+
     save_argv(argc, argv);
     if (get_options(argc, argv) != 0) {
         return -1;

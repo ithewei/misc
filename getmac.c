@@ -90,7 +90,7 @@ int getmac(char* mac, int len) {
             pCur->PhysicalAddress[3],
             pCur->PhysicalAddress[4],
             pCur->PhysicalAddress[5]);
-        
+
         //printf("mac:%s\n", mac);
         //printf(pCur->AdapterName);
         //printf("\n");

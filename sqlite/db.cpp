@@ -114,9 +114,9 @@ int dbtable_select(HDB hdb, const char* table_name, const char* keys, const char
             iter != options->end();
             ++iter) {
             sql += ' ';
-            iter->first;
+            sql += iter->first;
             sql += ' ';
-            iter->second;
+            sql += iter->second;
         }
     }
     sql += ';';
@@ -173,4 +173,17 @@ int dbtable_delete(HDB hdb, const char* table_name, const char* where) {
     return db_exec(hdb, sql.c_str());
 }
 ////////////////////////////////////////////////////////////////////////////////
+
+int dbtable_get_index(const char* key, const DBTable& table) {
+    if (table.size() == 0) {
+        return -1;
+    }
+    const DBRow& thead = table[0];
+    for (int i = 0; i < thead.size(); ++i) {
+        if (strcmp(key, thead[i].c_str()) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
 

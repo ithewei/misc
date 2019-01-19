@@ -39,5 +39,7 @@ int dbtable_update(HDB hdb, const char* table_name, const char* set, const char*
 // delete from $table_name where $where;
 int dbtable_delete(HDB hdb, const char* table_name, const char* where);
 
+int dbtable_get_index(const char* key, const DBTable& table);
+
 #endif  // SQLITE_DB_H_
 

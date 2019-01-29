@@ -49,7 +49,7 @@ struct FormData {
         this->type = type;
         this->data = data;
     }
-    FormData(string& str, FormDataType type = CONTENT) {
+    FormData(const string& str, FormDataType type = CONTENT) {
         this->type = type;
         this->data = str;
     }
@@ -71,7 +71,7 @@ struct FormData {
     }
 };
 
-typedef std::map<std::string, FormData>     Form;
+typedef std::multimap<std::string, FormData>     Form;
 
 struct HttpRequest {
     string              method;

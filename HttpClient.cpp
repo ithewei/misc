@@ -53,6 +53,53 @@ static size_t s_body_cb(char *buf, size_t size, size_t cnt, void *userdata) {
     return size*cnt;
 }
 
+string escape(string& param) {
+    string res;
+    const char* p = param.c_str();
+    int len = param.size();
+    char escape[4] = {0};
+    for (int i = 0; i < len; ++i) {
+        if (p[i] == ' ' ||
+            p[i] == '?' ||
+            p[i] == '=' ||
+            p[i] == '&' ||
+            p[i] == '%') {
+            sprintf(escape, "%%%02X", p[i]);
+            res += escape;
+        } else {
+            res += p[i];
+        }
+    }
+    return res;
+}
+
+inline bool is_hex(char c) {
+    return  (c >= '0' && c <= '9') ||
+            (c >= 'A' && c <= 'Z') ||
+            (c >= 'a' && c <= 'z');
+}
+
+inline int c2i(char c) {
+    return c-'0';
+}
+
+string unescape(string& escape_param) {
+    string res;
+    const char* p = escape_param.c_str();
+    int len = escape_param.size();
+    int i = 0;
+    while (i < len) {
+        if (p[i] == '%' && i < len-2 && is_hex(p[i+1]) && is_hex(p[i+2])) {
+            res += c2i(p[i+1])*16 + c2i(p[i+2]);
+            i += 3;
+        } else {
+            res += p[i];
+            ++i;
+        }
+    }
+    return res;
+}
+
 int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
     CURL* handle = curl_easy_init();
 
@@ -126,9 +173,10 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
             if (iter != req.kvs.begin()) {
                 params += '&';
             }
-            params += iter->first;
+            params += escape(iter->first);
             params += '=';
-            params += iter->second;
+            params += escape(iter->second);
+            iter++;
         }
         if (req.content_type == HttpRequest::QUERY_STRING) {
             string url_with_params(req.url);

@@ -1,7 +1,7 @@
 #include "HttpClient.h"
 
-#include "hw/hlog.h"
-#include "hw/hstring.h"
+#include "hlog.h"
+#include "hstring.h"
 
 atomic_flag HttpClient::s_bInit;
 
@@ -10,7 +10,6 @@ HttpClient::HttpClient() {
         curl_global_init(CURL_GLOBAL_ALL);
     }
     m_timeout = 0;
-    m_bDebug = false;
 }
 
 HttpClient::~HttpClient() {
@@ -53,7 +52,7 @@ static size_t s_body_cb(char *buf, size_t size, size_t cnt, void *userdata) {
     return size*cnt;
 }
 
-string escape(string& param) {
+string escape(const string& param) {
     string res;
     const char* p = param.c_str();
     int len = param.size();
@@ -83,7 +82,7 @@ inline int c2i(char c) {
     return c-'0';
 }
 
-string unescape(string& escape_param) {
+string unescape(const string& escape_param) {
     string res;
     const char* p = escape_param.c_str();
     int len = escape_param.size();
@@ -133,10 +132,8 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
     strContentType += psz;
     headers = curl_slist_append(headers, strContentType.c_str());
     curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
-    if (m_bDebug) {
-        hlogd("%s %s", req.method.c_str(), req.url.c_str());
-        hlogd("%s", strContentType.c_str());
-    }
+    hlogd("%s %s", req.method.c_str(), req.url.c_str());
+    hlogd("%s", strContentType.c_str());
 
     // body or params
     struct curl_httppost* httppost = NULL;
@@ -159,9 +156,7 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
         }
         if (httppost) {
             curl_easy_setopt(handle, CURLOPT_HTTPPOST, httppost);
-            if (m_bDebug) {
-                curl_formget(httppost, NULL, s_formget_cb);
-            }
+            curl_formget(httppost, NULL, s_formget_cb);
         }
     }
         break;
@@ -183,22 +178,16 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
             url_with_params += '?';
             url_with_params += params;
             curl_easy_setopt(handle, CURLOPT_URL, url_with_params.c_str());
-            if (m_bDebug) {
-                hlogd("%s", url_with_params.c_str());
-            }
+            hlogd("%s", url_with_params.c_str());
         } else {
             curl_easy_setopt(handle, CURLOPT_POSTFIELDS, params.c_str());
-            if (m_bDebug) {
-                hlogd("%s", params.c_str());
-            }
+            hlogd("%s", params.c_str());
         }
     }
         break;
     default: {
         curl_easy_setopt(handle, CURLOPT_POSTFIELDS, req.text.c_str());
-        if (m_bDebug) {
-            hlogd("%s", req.text.c_str());
-        }
+        hlogd("%s", req.text.c_str());
     }
         break;
     }
@@ -219,17 +208,15 @@ int HttpClient::curl(const HttpRequest& req, HttpResponse* res) {
         hloge("%d: %s", ret, curl_easy_strerror((CURLcode)ret));
     }
 
-    if (m_bDebug) {
-        if (res->body.length() != 0) {
-            hlogd("Response:%s", res->body.c_str());
-        }
-        double total_time, name_time, conn_time, pre_time;
-        curl_easy_getinfo(handle, CURLINFO_TOTAL_TIME, &total_time);
-        curl_easy_getinfo(handle, CURLINFO_NAMELOOKUP_TIME, &name_time);
-        curl_easy_getinfo(handle, CURLINFO_CONNECT_TIME, &conn_time);
-        curl_easy_getinfo(handle, CURLINFO_PRETRANSFER_TIME, &pre_time);
-        hlogd("TIME_INFO: %lf,%lf,%lf,%lf", total_time, name_time, conn_time, pre_time);
+    if (res->body.length() != 0) {
+        hlogd("Response:%s", res->body.c_str());
     }
+    double total_time, name_time, conn_time, pre_time;
+    curl_easy_getinfo(handle, CURLINFO_TOTAL_TIME, &total_time);
+    curl_easy_getinfo(handle, CURLINFO_NAMELOOKUP_TIME, &name_time);
+    curl_easy_getinfo(handle, CURLINFO_CONNECT_TIME, &conn_time);
+    curl_easy_getinfo(handle, CURLINFO_PRETRANSFER_TIME, &pre_time);
+    hlogd("TIME_INFO: %lf,%lf,%lf,%lf", total_time, name_time, conn_time, pre_time);
 
     if (headers) {
         curl_slist_free_all(headers);

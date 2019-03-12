@@ -101,7 +101,6 @@ public:
 
     int Send(const HttpRequest& req, HttpResponse* res);
 
-    void SetDebug(bool b) {m_bDebug = b;}
     void SetTimeout(int sec) {m_timeout = sec;}
     void AddHeader(string key, string value) {
         m_headers[key] = value;
@@ -121,7 +120,6 @@ protected:
 
 private:
     static atomic_flag s_bInit;
-    bool m_bDebug;
     int m_timeout;
     KeyValue m_headers;
 };

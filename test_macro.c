@@ -1,6 +1,10 @@
 #include <stdio.h>
 
 int main(int argc, char** argv) {
+#ifdef _WIN32_WINNT
+    printf("#define _WIN32_WINNT %d\n", _WIN32_WINNT);
+#endif
+
 #ifdef _MSC_VER
     printf("#define _MSC_VER %d\n", _MSC_VER);
 #endif
@@ -18,7 +22,7 @@ int main(int argc, char** argv) {
 #endif
 
 #ifdef NODEBUG
-    puts("NODEBU");
+    puts("NODEBUG");
 #endif
 
 #ifdef UNICODE
@@ -27,10 +31,6 @@ int main(int argc, char** argv) {
 
 #ifdef _UNICODE
     puts("_UNICODE");
-#endif
-
-#ifdef _WIN32_WINNT
-    printf("#define D_WIN32_WINNT %d\n", _WIN32_WINNT);
 #endif
 
 #ifdef WIN32
@@ -47,18 +47,6 @@ int main(int argc, char** argv) {
 
 #ifdef _WIN64
     puts("_WIN64");
-#endif
-
-#ifdef WINDOWS
-    puts("WINDOWS");
-#endif
-
-#ifdef UNIX
-    puts("UNIX");
-#endif
-
-#ifdef LINUX
-    puts("LINUX");
 #endif
 
 #ifdef unix

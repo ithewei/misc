@@ -155,7 +155,8 @@ int main(int argc, char** argv) {
 
     printf("%d clients, running %d sec\n", clients, time);
 
-    // get host and port
+    // domain port url
+    const char* req_url = "/";
     if (proxy_host) {
         strncpy(host, proxy_host, sizeof(host));
         port = proxy_port;
@@ -170,6 +171,8 @@ int main(int argc, char** argv) {
         const char* pos2 = strchr(pos1, '/');
         if (pos2 == NULL) {
             pos2 = url + strlen(url);
+        } else {
+            req_url = pos2;
         }
         int len = pos2 - pos1;
         char* server = (char*)malloc(len+1);
@@ -215,7 +218,7 @@ int main(int argc, char** argv) {
     }
 
     strcat(request, " ");
-    strcat(request, url);
+    strcat(request, req_url);
     strcat(request, " ");
     if (http == 0) {
         strcat(request, "HTTP/1.0");

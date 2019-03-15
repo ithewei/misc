@@ -433,6 +433,7 @@ int parse_http_request(const string& str, http_request_t* req) {
     // body
     req->body = p;
 
+    /*
     printf("------------------http_request------------------------\n");
     printf("%s %s %s\r\n", req->method.c_str(), req->uri.c_str(), req->version.c_str());
     for(auto& header : req->headers) {
@@ -441,6 +442,7 @@ int parse_http_request(const string& str, http_request_t* req) {
     printf("\r\n");
     printf("%s\n", req->body.c_str());
     printf("------------------http_request------------------------\n");
+    */
     return 0;
 }
 
@@ -485,21 +487,27 @@ void worker_proc(void* userdata) {
             perror("accept");
             exit(errno);
         }
-        printf("accept [%s:%d]\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+        //printf("accept [%s:%d]\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
         ScopeCleanup _(close, connsock);
 
+        std::string log;
+        log += asprintf("[%s:%d]", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+
         // recv
+        memset(buf, 0, sizeof(buf));
         ssize_t recvbytes = recv(connsock, buf, sizeof(buf), 0);
         if (recvbytes < 0) {
             perror("recv");
+            hlogi("%s", log.c_str());
             continue;
         }
-        printf("recv:\n%s\n", buf);
+        //printf("recv:\n%s\n", buf);
 
         // parse_http_request
         http_request_t req;
         http_response_t res;
         int ret = parse_http_request(buf, &req);
+        log += asprintf(" [%s %s %s]", req.method.c_str(), req.uri.c_str(), req.version.c_str());
         // build_http_response
         if (ret != 0) {
             res.status_code = HTTP_BAD_REQUEST;
@@ -535,8 +543,11 @@ void worker_proc(void* userdata) {
         ssize_t sendbytes = send(connsock, res_str.c_str(), res_str.size(), 0);
         if (sendbytes < 0) {
             perror("send");
+            hlogi("%s", log.c_str());
             continue;
         }
-        printf("send:\n%s\n", res_str.c_str());
+        //printf("send:\n%s\n", res_str.c_str());
+        log += asprintf(" [%d %s]", res.status_code, res.status_str.c_str());
+        hlogi("%s", log.c_str());
     }
 }

@@ -23,8 +23,7 @@ int Connect(const char* host, int port) {
     } else {
         struct hostent* phe = gethostbyname(host);
         if (phe == NULL) {
-            return -1;
-        }
+            return -1; }
         memcpy(&addr.sin_addr, phe->h_addr, phe->h_length);
     }
     addr.sin_port = htons(port);
@@ -45,7 +44,7 @@ int Connect(const char* host, int port) {
 #define METHOD_OPTIONS  2
 #define METHOD_TRACE    3
 
-#define VERSION         "webbench version 1.19.3.12"
+#define VERSION         "webbench/1.19.3.15"
 
 volatile int timerexpired = 0; // for timer
 int time    = 30;
@@ -226,6 +225,7 @@ int main(int argc, char** argv) {
         strcat(request, "HTTP/1.1");
     }
     strcat(request, "\r\n");
+    strcat(request, "User-Agent: webbench/1.18.3.15\r\n");
     strcat(request, "Cache-Control: no-cache\r\n");
     strcat(request, "Connection: close\r\n");
     strcat(request, "\r\n");

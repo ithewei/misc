@@ -406,10 +406,12 @@ int parse_http_request(const string& str, http_request_t* req) {
     if (delim == NULL)  return -10;
     // method
     const char* space = strchr(p, ' ');
+    if (space == NULL)  return -10;
     req->method = std::string(p, space-p);
     p = space + 1;
     // uri
     space = strchr(p, ' ');
+    if (space == NULL)  return -10;
     req->uri = std::string(p, space-p);
     p = space + 1;
     // version
@@ -509,13 +511,13 @@ void worker_proc(void* userdata) {
         int ret = parse_http_request(buf, &req);
         log += asprintf(" [%s %s %s]", req.method.c_str(), req.uri.c_str(), req.version.c_str());
         // build_http_response
-        if (ret != 0) {
+        if (ret != 0 ||
+            req.method.empty() ||
+            (strncmp(req.version.c_str(), "HTTP", 4) != 0)) {
             res.status_code = HTTP_BAD_REQUEST;
             res.status_str = get_http_status_string(HTTP_BAD_REQUEST);
             make_http_status_page(res.status_code, res.status_str.c_str(), res.body);
-        }
-
-        if (strcmp(req.method.c_str(), "GET") != 0) {;
+        } else if (strcmp(req.method.c_str(), "GET") != 0) {;
             res.status_code = 501;
             res.status_str = "Unimplemented Method";
             make_http_status_page(res.status_code, res.status_str.c_str(), res.body);

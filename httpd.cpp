@@ -428,7 +428,7 @@ int parse_http_request(const string& str, http_request_t* req) {
         const char* colon = strchr(p, ':');
         if (colon) {
             // k: v
-            req->headers[std::string(p, colon-p)] = std::string(colon+2, delim-(colon+2));
+            req->headers[std::string(p, colon-p)] = trim(std::string(colon+1, delim-(colon+1)));
         }
         p = delim + 2;
     }

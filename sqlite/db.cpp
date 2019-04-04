@@ -4,11 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "hlog.h"
-
 int db_open(const char* dbfile, HDB* phdb) {
     if (sqlite3_open(dbfile, phdb) != SQLITE_OK) {
-        hloge("sqlite3_open %s failed!", dbfile);
+        fprintf(stderr, "sqlite3_open %s failed!\n", dbfile);
         return SQL_ERR;
     }
 
@@ -26,9 +24,9 @@ int db_close(HDB* phdb) {
 
 int db_exec(HDB hdb, const char* sql) {
     char *errmsg;
-    hlogd("sql: %s", sql);
+    printf("sql: %s\n", sql);
     if (sqlite3_exec(hdb, sql, NULL, NULL, &errmsg) != SQLITE_OK) {
-        hloge("sqlite3_exec sql: %s err: %s", sql, errmsg);
+        fprintf(stderr, "sqlite3_exec sql: %s err: %s\n", sql, errmsg);
         return SQL_ERR;
     }
     return SQL_OK;
@@ -38,9 +36,9 @@ int db_exec_with_result(HDB hdb, const char* sql, DBTable* table) {
     int row, col;
     char **results;
     char *errmsg;
-    hlogd("sql: %s", sql);
+    printf("sql: %s\n", sql);
     if (sqlite3_get_table(hdb, sql, &results, &row, &col, &errmsg) != SQLITE_OK) {
-        hloge("sqlite3_get_table sql: %s err: %s", sql, errmsg);
+        fprintf(stderr, "sqlite3_get_table sql: %s err: %s\n", sql, errmsg);
         return SQL_ERR;
     }
 
@@ -59,9 +57,9 @@ int db_exec_with_result(HDB hdb, const char* sql, DBTable* table) {
 
 int db_exec_cb(HDB hdb, const char* sql, db_callback cb, void* userdata) {
     char *errmsg;
-    hlogd("sql: %s", sql);
+    printf("sql: %s\n", sql);
     if (sqlite3_exec(hdb, sql, cb, userdata, &errmsg) != SQLITE_OK) {
-        hloge("sqlite3_exec sql: %s err: %s", sql, errmsg);
+        fprintf(stderr, "sqlite3_exec sql: %s err: %s\n", sql, errmsg);
         return SQL_ERR;
     }
     return SQL_OK;
@@ -110,9 +108,7 @@ int dbtable_select(HDB hdb, const char* table_name, const char* keys, const char
         sql += where;
     }
     if (options) {
-        for (auto iter = options->begin();
-            iter != options->end();
-            ++iter) {
+        for (KeyVal::const_iterator iter = options->begin(); iter != options->end(); ++iter) {
             sql += ' ';
             sql += iter->first;
             sql += ' ';
@@ -179,7 +175,7 @@ int dbtable_get_index(const char* key, const DBTable& table) {
         return -1;
     }
     const DBRow& thead = table[0];
-    for (int i = 0; i < thead.size(); ++i) {
+    for (size_t i = 0; i < thead.size(); ++i) {
         if (strcmp(key, thead[i].c_str()) == 0) {
             return i;
         }

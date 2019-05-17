@@ -21,6 +21,10 @@ string make_url(const char* ip, int port, const char* url) {
             url);
 }
 
+string make_ServiceID(consul_service_t* service) {
+    return asprintf("%s-%s:%d", service->name, service->ip, service->port);
+}
+
 /*
 {
   "ID": "redis1",
@@ -52,7 +56,7 @@ int register_service(consul_node_t* node, consul_service_t* service, consul_heal
     HttpRequest req;
     req.method = "PUT";
     req.url = make_url(node->ip, node->port, url_register);
-    req.content_type = HttpRequest::APPLICATION_JSON;
+    req.content_type = APPLICATION_JSON;
 
     json jservice;
     jservice["Name"] = service->name;
@@ -60,6 +64,7 @@ int register_service(consul_node_t* node, consul_service_t* service, consul_heal
         jservice["Address"] = service->ip;
     }
     jservice["Port"] = service->port;
+    jservice["ID"] = make_ServiceID(service);
 
     json jcheck;
     jcheck[health->protocol] = health->url;
@@ -78,15 +83,15 @@ int register_service(consul_node_t* node, consul_service_t* service, consul_heal
     return 0;
 }
 
-int deregister_service(consul_node_t* node, const char* service_name) {
+int deregister_service(consul_node_t* node, consul_service_t* service) {
     string url = make_url(node->ip, node->port, url_deregister);
     url += '/';
-    url += service_name;
+    url += make_ServiceID(service);
 
     HttpRequest req;
     req.method = "PUT";
     req.url = url;
-    req.content_type = HttpRequest::APPLICATION_JSON;
+    req.content_type = APPLICATION_JSON;
 
     HttpResponse res;
     HttpClient cli;
@@ -124,7 +129,7 @@ int discover_services(consul_node_t* node, const char* service_name, std::vector
 
     consul_service_t service;
     services.clear();
-    for (int i = 0; i < jroot.size(); ++i) {
+    for (size_t i = 0; i < jroot.size(); ++i) {
         auto jservice = jroot[i];
         if (!jservice.is_object()) {
             continue;
@@ -147,7 +152,7 @@ int discover_services(consul_node_t* node, const char* service_name, std::vector
         int    port = jport;
 
         strncpy(service.name, name.c_str(), sizeof(service.name));
-        strncpy(service.ip, name.c_str(), sizeof(service.ip));
+        strncpy(service.ip, ip.c_str(), sizeof(service.ip));
         service.port = port;
         services.emplace_back(service);
     }

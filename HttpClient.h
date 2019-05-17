@@ -4,102 +4,47 @@
 /***************************************************************
 HttpClient based libcurl
 ***************************************************************/
-
-#include <string>
-#include <vector>
-#include <map>
-
-using std::string;
-using std::vector;
-using std::map;
-
 #include <atomic>
-using std::atomic_flag;
 
 #include <curl/curl.h>
 
-// F(id, str)
-#define FOREACH_CONTENT_TYPE(F) \
-    F(TEXT_PLAIN,               "text/plain")   \
-    F(TEXT_HTML,                "text/html")    \
-    F(TEXT_XML,                 "text/xml")     \
-    F(APPLICATION_JSON,         "application/json") \
-    F(APPLICATION_XML,          "application/xml")  \
-    F(APPLICATION_JAVASCRIPT,   "application/javascript")   \
-    \
-    F(FORM_DATA,                "multipart/form-data")  \
-    \
-    F(X_WWW_FORM_URLENCODED,    "application/x-www-form-urlencoded")    \
-    F(QUERY_STRING,             "text/plain")
+#include "HttpRequest.h"
 
-#define ENUM_CONTENT_TYPE(id, _)    id,
+/*
+ * @code
+#include "HttpClient.h"
 
-typedef std::map<std::string, std::string> KeyValue;
+#include <stdio.h>
 
-struct FormData {
-    enum FormDataType {
-        CONTENT,
-        FILENAME
-    } type;
-    string       data;
-    FormData() {
-        type = CONTENT;
+int main(int argc, char* argv[]) {
+    HttpClient session;
+    HttpRequest req;
+    req.method = "GET";
+    req.url = "www.baidu.com";
+    HttpResponse res;
+    int ret = session.Send(req, &res);
+    if (ret != 0) {
+        printf("%s %s failed => %d:%s\n", req.method.c_str(), req.url.c_str(), ret, HttpClient::strerror(ret));
     }
-    FormData(const char* data, FormDataType type = CONTENT) {
-        this->type = type;
-        this->data = data;
+    else {
+        printf("%s %d %s\r\n", res.version.c_str(), res.status_code, res.status_message.c_str());
+        for (auto& header : res.headers) {
+            printf("%s: %s\r\n", header.first.c_str(), header.second.c_str());
+        }
+        printf("\r\n");
+        printf("%s", res.body.c_str());
+        printf("\n");
     }
-    FormData(const string& str, FormDataType type = CONTENT) {
-        this->type = type;
-        this->data = str;
-    }
-    FormData(int n) {
-        this->type = CONTENT;
-        this->data = std::to_string(n);
-    }
-    FormData(long long n) {
-        this->type = CONTENT;
-        this->data = std::to_string(n);
-    }
-    FormData(float f) {
-        this->type = CONTENT;
-        this->data = std::to_string(f);
-    }
-    FormData(double lf) {
-        this->type = CONTENT;
-        this->data = std::to_string(lf);
-    }
-};
-
-typedef std::multimap<std::string, FormData>     Form;
-
-struct HttpRequest {
-    string              method;
-    string              url;
-
-    enum ContentType {
-        NONE,
-        FOREACH_CONTENT_TYPE(ENUM_CONTENT_TYPE)
-        LAST
-    } content_type;
-
-    string          text;
-    KeyValue        kvs;
-    Form            form;
-};
-
-struct HttpResponse {
-    string status;
-    KeyValue headers;
-    string body;
-};
-
+    return ret;
+}
+ */
 class HttpClient {
 public:
     HttpClient();
     ~HttpClient();
 
     int Send(const HttpRequest& req, HttpResponse* res);
+    static const char* strerror(int errcode);
 
     void SetTimeout(int sec) {m_timeout = sec;}
     void AddHeader(string key, string value) {
@@ -119,10 +64,9 @@ protected:
     int curl(const HttpRequest& req, HttpResponse* res);
 
 private:
-    static atomic_flag s_bInit;
-    int m_timeout;
+    static std::atomic_flag s_bInit;
+    int m_timeout; // unit:s default:10s
     KeyValue m_headers;
 };
 
 #endif  // HTTP_CLIENT_H_
-

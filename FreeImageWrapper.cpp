@@ -1,3 +1,7 @@
+#include "hw/hplatform.h"  // for stricmp in linux
+#include "hw/hlog.h"
+#include "hw/hstring.h"
+
 #include "FreeImageWrapper.h"
 
 bool FreeImageWrapper::s_bInit = false;
@@ -68,9 +72,6 @@ bool FreeImageWrapper::LoadFromMemory(const void* data, size_t size) {
     return _bmp != NULL;
 }
 
-#include "hw/hlog.h"
-#include "hw/hstring.h"
-#include "hw/hplatform.h"  // for stricmp in linux
 bool FreeImageWrapper::Save(const char* filepath) {
     if (_bmp == NULL) {
         return false;

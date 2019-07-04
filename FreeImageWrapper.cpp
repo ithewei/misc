@@ -1,7 +1,3 @@
-#include "hw/hplatform.h"  // for stricmp in linux
-#include "hw/hlog.h"
-#include "hw/hstring.h"
-
 #include "FreeImageWrapper.h"
 
 bool FreeImageWrapper::s_bInit = false;
@@ -77,18 +73,8 @@ bool FreeImageWrapper::Save(const char* filepath) {
         return false;
     }
 
-    // At present, we just provide bmp/jpg/png
-    string strFile(filepath);
-    const char* suffix = suffixname(strFile).c_str();
-    FREE_IMAGE_FORMAT fmt = FIF_UNKNOWN;
-    if (stricmp(suffix, "bmp") == 0) {
-        fmt = FIF_BMP;
-    } else if (stricmp(suffix, "jpg") == 0) {
-        fmt = FIF_JPEG;
-    } else if (stricmp(suffix, "png") == 0) {
-        fmt = FIF_PNG;
-    } else {
-        hloge("Unsupported format %s", suffix);
+    FREE_IMAGE_FORMAT fmt = FreeImage_GetFileType(filepath);
+    if (fmt == FIF_UNKNOWN) {
         return false;
     }
 

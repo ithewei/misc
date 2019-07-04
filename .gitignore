@@ -1,0 +1,29 @@
+# cache
+*~
+*.bk
+*.bak
+*.old
+*.new
+
+# IDE
+.vs
+.vscode
+
+tags
+cscope*
+.ycm*
+
+# output
+*.o
+*.obj
+
+*.pid
+*.log
+*.db
+
+lib
+bin
+dist
+
+# test
+test

@@ -20,11 +20,13 @@ int Connect(const char* host, int port) {
     in_addr_t inaddr = inet_addr(host);
     if (inaddr != INADDR_NONE) {
         addr.sin_addr.s_addr = inaddr;
-    } else {
+    }
+    else {
         struct hostent* phe = gethostbyname(host);
         if (phe == NULL) {
-            return -1; }
-        memcpy(&addr.sin_addr, phe->h_addr, phe->h_length);
+            return -1;
+        }
+        memcpy(&addr.sin_addr, phe->h_addr_list[0], phe->h_length);
     }
     addr.sin_port = htons(port);
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -81,20 +83,21 @@ static const struct option long_options[] = {
 };
 
 void print_usage() {
-    printf("webbench [%s] URL\n", options);
-    puts(R"(
-  -?|-h|--help              Print this information.
-  -V|--version              Print version.
-  -0|--http10               Use HTTP/1.0 protocol.
-  -1|--http11               Use HTTP/1.1 protocol.
-  -t|--time <sec>           Run benchmark for <sec> seconds. Default 30.
-  -p|--proxy <server:port>  Use proxy server for request.
-  -c|--clients <n>          Run <n> HTTP clients. Default one.
-  --get                     Use GET request method.
-  --head                    Use HEAD request method.
-  --options                 Use OPTIONS request method.
-  --trace                   Use TRACE request method.
-    )");
+    printf("Usage: webbench [%s] URL\n", options);
+    puts("\n\
+Options:\n\
+  -?|-h|--help              Print this information.\n\
+  -V|--version              Print version.\n\
+  -0|--http10               Use HTTP/1.0 protocol.\n\
+  -1|--http11               Use HTTP/1.1 protocol.\n\
+  -t|--time <sec>           Run benchmark for <sec> seconds. Default 30.\n\
+  -p|--proxy <server:port>  Use proxy server for request.\n\
+  -c|--clients <n>          Run <n> HTTP clients. Default one.\n\
+  --get                     Use GET request method.\n\
+  --head                    Use HEAD request method.\n\
+  --options                 Use OPTIONS request method.\n\
+  --trace                   Use TRACE request method.\n\
+    ");
 }
 
 int parse_cmdline(int argc, char** argv) {
@@ -111,7 +114,7 @@ int parse_cmdline(int argc, char** argv) {
         case 'c': clients = atoi(optarg); break;
         case 'p':
             {
-                // server:port
+                // host:port
                 char* pos = strrchr(optarg, ':');
                 proxy_host = optarg;
                 if (pos == NULL) break;
@@ -160,7 +163,7 @@ int main(int argc, char** argv) {
         strncpy(host, proxy_host, sizeof(host));
         port = proxy_port;
     } else {
-        // http://domain:port/...
+        // http://host:port/path
         const char* pos1 = strstr(url, "http://");
         if (pos1 == NULL) {
             pos1 = url;

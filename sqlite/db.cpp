@@ -4,12 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define BUSY_TIMEOUT    5000 // ms
+
 int db_open(const char* dbfile, HDB* phdb) {
     if (sqlite3_open(dbfile, phdb) != SQLITE_OK) {
         fprintf(stderr, "sqlite3_open %s failed!\n", dbfile);
         return SQL_ERR;
     }
 
+    sqlite3_busy_timeout(*phdb, BUSY_TIMEOUT);
     return SQL_OK;
 }
 

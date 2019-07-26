@@ -1,7 +1,9 @@
 #include <stdio.h>
-#include <Windows.h>
-#include <DbgHelp.h>
+#include <windows.h>
+#include <dbghelp.h>
+#ifdef _MSC_VER
 #pragma comment(lib,"DbgHelp.lib")
+#endif
 
 LONG UnhandledException(EXCEPTION_POINTERS *pException) {
     char modulefile[256];
